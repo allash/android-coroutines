@@ -1,8 +1,8 @@
 package com.example.android.coroutineshomework
 
-import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
+import android.support.v7.widget.LinearLayoutManager
 import android.util.Log
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.coroutines.CoroutineScope
@@ -14,18 +14,19 @@ import retrofit2.HttpException
 class MainActivity : AppCompatActivity() {
 
     companion object {
-        val EXTRA_TRACK_ID = "extra_track_id"
-        val EXTRA_TRACK_NAME = "extra_track_name"
+        private val TAG: String = MainActivity::class.java.simpleName
     }
 
-    private val TAG: String = "MainActivity"
     private lateinit var tracksAdapter: TracksAdapter
+    private lateinit var linearLayoutManager: LinearLayoutManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val ctx = this
+        linearLayoutManager = LinearLayoutManager(this)
+        tracksRecyclerView.layoutManager = linearLayoutManager
+
         val service = RetrofitFactory.build()
         CoroutineScope(Dispatchers.IO).launch {
             val response = service.getTracks()
@@ -35,10 +36,9 @@ class MainActivity : AppCompatActivity() {
                         Log.i(TAG, "Success")
 
                         response.body()?.let {
-                            tracksAdapter = TracksAdapter(ctx, it)
-                            tracksListView.adapter = tracksAdapter
+                            tracksAdapter = TracksAdapter(it)
+                            tracksRecyclerView.adapter = tracksAdapter
                         }
-
 
                     } else {
                         Log.i(TAG, "Error")
@@ -49,15 +49,6 @@ class MainActivity : AppCompatActivity() {
                     Log.i(TAG, "Unknown exception: ${e.message}")
                 }
             }
-        }
-
-        tracksListView.setOnItemClickListener { _, _, position, _ ->
-            val track = tracksAdapter.getItem(position)
-            val detailIntent = Intent(this, TrackDetailsActivity::class.java)
-            detailIntent.putExtra(EXTRA_TRACK_ID, track._id)
-            detailIntent.putExtra(EXTRA_TRACK_NAME, track.name)
-
-            startActivity(detailIntent)
         }
     }
 }

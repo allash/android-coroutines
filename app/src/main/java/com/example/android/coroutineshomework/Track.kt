@@ -12,7 +12,7 @@ data class Track (
     val img: String = "",
     val src: Source? = null,
     val nbP: String = "",
-    val lov: List<String> = listOf()
+    val lov: List<String>
 
 ) {
     data class Pl (

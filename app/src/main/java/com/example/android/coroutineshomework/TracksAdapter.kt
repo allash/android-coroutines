@@ -1,37 +1,52 @@
 package com.example.android.coroutineshomework
 
-import android.content.Context
+import android.content.Intent
+import android.support.annotation.LayoutRes
+import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.BaseAdapter
 import kotlinx.android.synthetic.main.track_item_cell.view.*
 
 class TracksAdapter(
-    private val context: Context,
     private val tracks: List<Track>
-) : BaseAdapter() {
+) : RecyclerView.Adapter<TracksAdapter.TrackViewHolder>() {
 
-    private val inflater: LayoutInflater = context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
-
-    override fun getView(pos: Int, converterView: View?, parent: ViewGroup?): View {
-        val rowView = inflater.inflate(R.layout.track_item_cell, parent, false)
-
-        val track = getItem(pos)
-        rowView.trackTitleTextView.text = track.name
-
-        return rowView
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TrackViewHolder {
+        val inflatedView = parent.inflate(R.layout.track_item_cell, false)
+        return TrackViewHolder(inflatedView)
     }
 
-    override fun getItem(pos: Int): Track {
-        return tracks[pos]
+    override fun getItemCount(): Int = tracks.size
+
+    override fun onBindViewHolder(holder: TrackViewHolder, pos: Int) = holder.bind(tracks[pos])
+
+    fun ViewGroup.inflate(@LayoutRes layoutRes: Int, attachToRoot: Boolean = false): View {
+        return LayoutInflater.from(context).inflate(layoutRes, this, attachToRoot)
     }
 
-    override fun getItemId(pos: Int): Long {
-        return pos.toLong()
-    }
+    class TrackViewHolder(view: View): RecyclerView.ViewHolder(view), View.OnClickListener {
 
-    override fun getCount(): Int {
-        return tracks.size
+        private var trackView: View = view
+        private var track: Track? = null
+
+        init {
+            view.setOnClickListener(this)
+        }
+
+        fun bind(item: Track) {
+            track = item
+            trackView.trackTitleTextView.text = item.name
+        }
+
+        override fun onClick(v: View?) {
+            val ctx = trackView.context
+            val detailIntent = Intent(ctx, TrackDetailsActivity::class.java)
+            detailIntent.putExtra(EXTRA_TRACK_ID, track?._id)
+            detailIntent.putExtra(EXTRA_TRACK_NAME, track?.name)
+            detailIntent.putExtra(EXTRA_TRACK_IMAGE_URL, track?.img)
+
+            ctx.startActivity(detailIntent)
+        }
     }
 }
