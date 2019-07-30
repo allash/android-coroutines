@@ -1,5 +1,6 @@
 package com.example.android.coroutineshomework.views.activities
 
+import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
@@ -8,26 +9,29 @@ import com.example.android.coroutineshomework.R
 import com.example.android.coroutineshomework.network.RetrofitFactory
 import com.example.android.coroutineshomework.views.adapters.MoviesAdapter
 import kotlinx.android.synthetic.main.activity_main.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 
 class MainActivity : AppCompatActivity() {
 
+    companion object {
+        const val EXTRA_MOVIE = "extra_movie"
+    }
+
     private lateinit var moviesAdapter: MoviesAdapter
-    private lateinit var linearLayoutManager: LinearLayoutManager
-    private val apiService by lazy { RetrofitFactory.build() }
+    private lateinit var job: Job
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        linearLayoutManager = LinearLayoutManager(this)
+        val linearLayoutManager = LinearLayoutManager(this)
         moviesRecyclerView.layoutManager = linearLayoutManager
 
+        val apiService = RetrofitFactory.build()
+
         val ctx = this
-        CoroutineScope(Dispatchers.IO).launch {
+        job = CoroutineScope(Dispatchers.IO).launch {
+
             val response = apiService.getPopularMovies()
             withContext(Dispatchers.Main) {
                 try {
@@ -35,7 +39,11 @@ class MainActivity : AppCompatActivity() {
                         response.body()?.let {
                             it.results?.let { movies ->
                                 moviesAdapter =
-                                    MoviesAdapter(movies)
+                                    MoviesAdapter(movies) { ctx, movie ->
+                                        val intent = Intent(ctx, MovieDetailsActivity::class.java)
+                                        intent.putExtra(EXTRA_MOVIE, movie)
+                                        ctx.startActivity(intent)
+                                    }
                                 moviesRecyclerView.adapter = moviesAdapter
                             }
                         }
@@ -47,6 +55,11 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        job.cancel()
     }
 }
 
